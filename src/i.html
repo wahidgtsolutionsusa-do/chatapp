@@ -1,0 +1,21 @@
+// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyDIfDoWmF2Ui4aOmyQCYSlKidEZzJG93jg",
+  authDomain: "formvalidation-f179e.firebaseapp.com",
+  projectId: "formvalidation-f179e",
+  storageBucket: "formvalidation-f179e.firebasestorage.app",
+  messagingSenderId: "284996511228",
+  appId: "1:284996511228:web:d4f54b63dc14d1079b3e79",
+  measurementId: "G-BZL74SWVL9"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
