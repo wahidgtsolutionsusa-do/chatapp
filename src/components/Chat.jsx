@@ -1,6 +1,6 @@
 // src/components/Chat.jsx
 import React, { useEffect, useState, useRef } from "react";
-import { db, auth } from "../firebase"; // Firebase Firestore & Auth
+import { db, auth } from "../firebase";
 import {
   collection,
   addDoc,
@@ -16,16 +16,14 @@ import { motion, AnimatePresence } from "framer-motion";
 import { FaPaperPlane, FaSignOutAlt, FaPlus, FaSun, FaMoon, FaTrash } from "react-icons/fa";
 
 export default function Chat({ user }) {
-  // 🔹 State variables
-  const [messages, setMessages] = useState([]); // Chat messages
-  const [text, setText] = useState(""); // User typed text
-  const [image, setImage] = useState(null); // Selected image
-  const [selectedMsgs, setSelectedMsgs] = useState([]); // Messages selected for delete
-  const [showDeletePopup, setShowDeletePopup] = useState(false); // Delete popup toggle
-  const [darkMode, setDarkMode] = useState(false); // Dark mode toggle
-  const messagesEndRef = useRef(null); // Scroll to bottom reference
+  const [messages, setMessages] = useState([]);
+  const [text, setText] = useState("");
+  const [image, setImage] = useState(null);
+  const [selectedMsgs, setSelectedMsgs] = useState([]);
+  const [showDeletePopup, setShowDeletePopup] = useState(false);
+  const [darkMode, setDarkMode] = useState(false);
+  const messagesEndRef = useRef(null);
 
-  // 🔹 Fetch messages from Firebase (real-time)
   useEffect(() => {
     const q = query(collection(db, "messages"), orderBy("timestamp", "asc"));
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -34,45 +32,39 @@ export default function Chat({ user }) {
     return () => unsubscribe();
   }, []);
 
-  // 🔹 Auto-scroll to bottom when new message arrives
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // 🔹 Send message (text + image via Cloudinary)
   const handleSend = async (e) => {
     e.preventDefault();
     if (!text && !image) return;
 
-    let imageUrl = ""; // Cloudinary URL
+    let imageUrl = "";
 
     try {
       if (image) {
-        // 🔹 Cloudinary upload
         const formData = new FormData();
-        formData.append("file", image); // selected image
-        formData.append("upload_preset", "chat_images"); // unsigned preset
+        formData.append("file", image);
+        formData.append("upload_preset", "chat_images");
 
-        // 🔹 FRONTEND API CALL TO CLOUDINARY
         const res = await fetch(
           "https://api.cloudinary.com/v1_1/dxcqsbbco/image/upload",
           { method: "POST", body: formData }
         );
 
         const data = await res.json();
-        imageUrl = data.secure_url; // ye URL Firestore me save hoga
+        imageUrl = data.secure_url;
       }
 
-      // 🔹 Save message in Firestore (text + image URL)
       await addDoc(collection(db, "messages"), {
         text,
-        image: imageUrl, // Either empty or Cloudinary URL
+        image: imageUrl,
         uid: user.uid,
         email: user.email,
         timestamp: serverTimestamp(),
       });
 
-      // 🔹 Clear inputs
       setText("");
       setImage(null);
     } catch (err) {
@@ -80,21 +72,19 @@ export default function Chat({ user }) {
     }
   };
 
-  // 🔹 Select / Unselect messages for delete
   const toggleSelectMsg = (id) => {
     setSelectedMsgs((prev) =>
       prev.includes(id) ? prev.filter((msgId) => msgId !== id) : [...prev, id]
     );
   };
 
-  // 🔹 Delete selected messages (Firestore only)
   const handleDelete = async () => {
+    if (selectedMsgs.length === 0) return;
     try {
       for (let id of selectedMsgs) {
         const msg = messages.find((m) => m.id === id);
         if (!msg || msg.uid !== user.uid) continue;
         await deleteDoc(doc(db, "messages", id));
-        // Note: Cloudinary images are not deleted from frontend
       }
       setSelectedMsgs([]);
       setShowDeletePopup(false);
@@ -103,40 +93,37 @@ export default function Chat({ user }) {
     }
   };
 
-  // 🔹 Logout
   const handleLogout = async () => {
     await signOut(auth);
   };
 
   return (
-    <div
-      className={`flex flex-col h-screen w-screen ${darkMode ? "bg-gray-900 text-white" : "bg-white text-black"
-        }`}
-    >
+    <div className={`flex flex-col h-screen w-screen ${darkMode ? "bg-gray-900 text-white" : "bg-[#fff0f8] text-black"}`}>
+      
       {/* Header */}
-      <div
-        className={`flex justify-between items-center p-3 shadow-md ${darkMode ? "bg-gray-800" : "bg-gray-200"
-          }`}
-      >
+      <div className="flex justify-between items-center p-3 shadow-md bg-white text-black">
         <h2 className="text-lg font-semibold truncate">Chat - {user.email}</h2>
         <div className="flex items-center gap-3">
           {selectedMsgs.length > 0 && (
             <button
-              onClick={() => setShowDeletePopup(true)}
-              className="flex items-center gap-2 bg-red-500 px-3 py-1 rounded-md hover:bg-red-600 transition duration-200 text-white text-sm"
+              onClick={handleDelete}
+              className="flex items-center gap-2 px-3 py-1 rounded-md text-white text-sm"
+              style={{ backgroundColor: "#ff4d4f" }}
             >
               <FaTrash /> Delete ({selectedMsgs.length})
             </button>
           )}
           <button
             onClick={() => setDarkMode(!darkMode)}
-            className="p-2 rounded-full bg-gray-700 text-white hover:bg-gray-600"
+            className="p-2 rounded-full text-white"
+            style={{ backgroundColor: darkMode ? "#fbbf24" : "#4b5563" }}
           >
             {darkMode ? <FaSun /> : <FaMoon />}
           </button>
           <button
             onClick={handleLogout}
-            className="flex items-center gap-2 bg-red-500 px-3 py-1 rounded-md hover:bg-red-600 transition duration-200 text-white text-sm"
+            className="flex items-center gap-2 px-3 py-1 rounded-md text-white text-sm"
+            style={{ backgroundColor: "#e77bd1" }}
           >
             <FaSignOutAlt /> Logout
           </button>
@@ -154,15 +141,15 @@ export default function Chat({ user }) {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: -20 }}
               transition={{ duration: 0.25 }}
-              className={`flex flex-col max-w-full p-3 rounded-2xl shadow-sm break-words cursor-pointer ${msg.uid === user.uid
+              className={`flex flex-col max-w-full p-3 rounded-2xl shadow-sm break-words cursor-pointer ${
+                msg.uid === user.uid
                   ? darkMode
-                    ? "bg-blue-700 self-end"
-                    : "bg-gray-300 self-end"
+                    ? "bg-gray-700 self-end text-white"
+                    : "bg-white self-end text-black"
                   : darkMode
-                    ? "bg-gray-700 self-start"
-                    : "bg-gray-100 self-start"
-                } ${selectedMsgs.includes(msg.id) ? "ring-2 ring-red-400" : ""
-                }`}
+                  ? "bg-gray-600 self-start text-white"
+                  : "bg-gray-200 self-start text-black"
+              } ${selectedMsgs.includes(msg.id) ? "ring-2 ring-red-400" : ""}`}
             >
               <p className="text-xs opacity-70">{msg.email}</p>
               {msg.text && <p className="mt-1 text-sm">{msg.text}</p>}
@@ -182,48 +169,14 @@ export default function Chat({ user }) {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Delete Popup */}
-      {showDeletePopup && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center">
-          <div
-            className={`p-4 rounded-lg shadow-lg w-[220px] ${darkMode ? "bg-gray-800 text-white" : "bg-white text-black"
-              }`}
-          >
-            <p className="text-sm mb-3">
-              Delete {selectedMsgs.length} message
-              {selectedMsgs.length > 1 ? "s" : ""}?
-            </p>
-            <div className="flex gap-2 justify-end">
-              <button
-                onClick={() => setShowDeletePopup(false)}
-                className={`px-3 py-1 rounded-md text-sm ${darkMode
-                    ? "bg-gray-600 hover:bg-gray-500"
-                    : "bg-gray-200 hover:bg-gray-300"
-                  }`}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleDelete}
-                className="px-3 py-1 bg-red-500 text-white rounded-md text-sm hover:bg-red-600"
-              >
-                Delete
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Input */}
       <form
         onSubmit={handleSend}
-        className={`flex items-center gap-2 p-3 border-t w-full ${darkMode ? "bg-gray-800 border-gray-700" : "bg-gray-100 border-gray-300"
-          }`}
+        className={`flex items-center gap-2 p-3 border-t w-full ${darkMode ? "bg-gray-800 border-gray-700" : "bg-[#ffe6f0] border-gray-300"}`}
       >
-        {/* File Upload */}
         <label
-          className={`cursor-pointer flex items-center justify-center p-3 rounded-full ${darkMode ? "bg-blue-600" : "bg-black"
-            } text-white`}
+          className={`cursor-pointer flex items-center justify-center p-3 rounded-full text-white`}
+          style={{ backgroundColor: darkMode ? "#4b5563" : "#e77bd1" }}
         >
           <FaPlus />
           <input
@@ -234,25 +187,22 @@ export default function Chat({ user }) {
           />
         </label>
 
-        {/* Text Input */}
         <input
           type="text"
           placeholder="Type a message..."
-          className={`flex-1 p-3 rounded-full placeholder-gray-500 focus:outline-none focus:ring-2 transition duration-200 ${darkMode
-              ? "bg-gray-700 text-white focus:ring-blue-500"
-              : "bg-white text-black focus:ring-gray-400"
-            }`}
+          className={`flex-1 p-3 rounded-full placeholder-gray-500 focus:outline-none focus:ring-2 transition duration-200 ${
+            darkMode ? "bg-gray-700 text-white focus:ring-blue-500" : "bg-white text-black focus:ring-[#e77bd1]"
+          }`}
           value={text}
           onChange={(e) => setText(e.target.value)}
         />
 
-        {/* Send Button */}
         <motion.button
           type="submit"
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
-          className={`flex items-center gap-2 px-5 py-2 rounded-full transition duration-200 shadow ${darkMode ? "bg-blue-600 hover:bg-blue-700" : "bg-black hover:bg-gray-800"
-            } text-white`}
+          className="flex items-center gap-2 px-5 py-2 rounded-full text-white transition duration-200 shadow"
+          style={{ backgroundColor: darkMode ? "#4b5563" : "#e77bd1" }}
         >
           <FaPaperPlane />
         </motion.button>

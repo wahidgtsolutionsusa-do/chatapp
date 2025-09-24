@@ -4,6 +4,9 @@ import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../firebase";
 import { motion } from "framer-motion";
 
+// ✅ Local image import
+import bgImage from "../assets/bg-login.png";
+
 export default function LoginForm({ setUser }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -21,10 +24,16 @@ export default function LoginForm({ setUser }) {
   };
 
   return (
-    <div className="flex items-center justify-center h-screen w-screen bg-white">
+    <div
+      className="flex items-center justify-center h-screen w-screen bg-cover bg-center"
+      style={{ backgroundImage: `url(${bgImage})` }}
+    >
       <motion.form
         onSubmit={handleLogin}
-        className="flex flex-col w-full max-w-md p-8 bg-black rounded-2xl shadow-lg space-y-4"
+        className="flex flex-col w-full max-w-md p-8 rounded-2xl shadow-lg space-y-4"
+        style={{
+          background: "linear-gradient(180deg, #e77bd1, #000)", // ✅ Gradient top #e77bd1 to bottom black
+        }}
         initial={{ opacity: 0, y: -50 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
